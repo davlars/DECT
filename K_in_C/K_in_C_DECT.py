@@ -57,12 +57,12 @@ with open(geomFile, 'rb') as f:
 A = odl.tomo.RayTransform(reco_space, geom, impl='astra_cuda')
 
 print("Loading data")
-file1 = '/home/davlars/DECT_git/K_in_C/K_in_C_140kV.npy'
+file1 = '/home/davlars/DECT/K_in_C/K_in_C_140kV.npy'
 projections1 = load_data(file1)
 projections1 = projections1[:,:,5]
 #projections1 /= np.max(projections1)
 
-file2 = '/home/davlars/DECT_git/K_in_C/K_in_C_80kV.npy'
+file2 = '/home/davlars/DECT/K_in_C/K_in_C_80kV.npy'
 projections2 = load_data(file2)
 projections2 = projections2[:,:,5]
 #projections2 /= np.max(projections2)

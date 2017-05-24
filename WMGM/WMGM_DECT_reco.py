@@ -12,12 +12,12 @@ import os
 import sys
 import pickle
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
+import matplotlib.pyplot as plt
 from DECT_data import *
 from lmfit import minimize, Parameters
 
 PY3 = (sys.version_info > (3, 0))
-data_path = '/home/davlars/DECT_git/WMGM/'
+data_path = '/mnt/datahd/davlars/DECT/WMGM/'
 file = 'WMGM_cube_phantom_1_thin_bone'
 
 def load_data(filename):
@@ -101,11 +101,11 @@ A = odl.tomo.RayTransform(reco_space, geom, impl='astra_cuda')
 
 print("Loading high dose data")
 projections1 = load_data(os.path.join(data_path, file + '_140kV.npy'))
-projections1 = projections1[::10,...,5]
+projections1 = projections1[::,...,5]
 #projections1 /= 13900
 
 projections2 = load_data(os.path.join(data_path, file + '_80kV.npy'))
-projections2 = projections2[::10,...,5]
+projections2 = projections2[::,...,5]
 #projections2 /= 6730
 
 #Spectrum high
@@ -149,7 +149,7 @@ A2b[..., 0] = C
        
 counter = 0
 
-for iter in range(50):
+for iter in range(100):
     step1 = 1.0*np.ones(proj_shape)
     step2 = 1.0*np.ones(proj_shape)
     counter += 1
@@ -189,9 +189,9 @@ for iter in range(50):
     if counter == 500:
         WM = np.squeeze(A1b[...,0])
         GM = np.squeeze(A2b[...,0])
-        WMname = ('/home/davlars/DECT/WMGM_reco/WM_{}'.format(iter) + 'iterations.npy')
+        WMname = ('/mnt/datahd/davlars/DECT/WMGM/WMGM_reco/WM_phantom1_thin_bone_4000_proj_{}'.format(iter) + 'iterations.npy')
         np.save(WMname, WM)
-        GMname = ('/home/davlars/DECT/WMGM_reco/GM_{}'.format(iter) + 'iterations.npy')
+        GMname = ('/mnt/datahd/davlars/DECT/WMGM/WMGM_reco/GM_phantom1_thin_bone_4000_proj_{}'.format(iter) + 'iterations.npy')
         np.save(GMname, GM)
         counter = 0
         
