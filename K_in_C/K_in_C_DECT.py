@@ -57,12 +57,12 @@ with open(geomFile, 'rb') as f:
 A = odl.tomo.RayTransform(reco_space, geom, impl='astra_cuda')
 
 print("Loading data")
-file1 = '/home/davlars/DECT/K_in_C/K_in_C_140kV.npy'
+file1 = '/home/davlars/DECT_git/K_in_C/K_in_C_140kV.npy'
 projections1 = load_data(file1)
 projections1 = projections1[:,:,5]
 #projections1 /= np.max(projections1)
 
-file2 = '/home/davlars/DECT/K_in_C/K_in_C_80kV.npy'
+file2 = '/home/davlars/DECT_git/K_in_C/K_in_C_80kV.npy'
 projections2 = load_data(file2)
 projections2 = projections2[:,:,5]
 #projections2 /= np.max(projections2)
@@ -97,7 +97,11 @@ A1b = A1[..., None]
 A2b = A2[..., None]
 eps = 1e-5
 
+counter = 0
 for iter in range(100):
+    step1 = 1.0*np.ones(proj_shape)
+    step2 = 1.0*np.ones(proj_shape)
+    counter += 1
     e1 = N*np.sum(spectrum1*energies1*np.exp(-(A1b*f1+A2b*f2)), axis=-1)
     e2 = N*np.sum(spectrum2*energies2*np.exp(-(A1b*f1+A2b*f2)), axis=-1)
     '''
@@ -109,15 +113,7 @@ for iter in range(100):
     J[..., 0, 1] = N*np.sum(f2*spectrum1*energies1*np.exp(-(A1b*f1+A2b*f2)), axis=-1)
     J[..., 1, 0] = N*np.sum(f1*spectrum2*energies2*np.exp(-(A1b*f1+A2b*f2)), axis=-1)
     J[..., 1, 1] = N*np.sum(f2*spectrum2*energies2*np.exp(-(A1b*f1+A2b*f2))+eps, axis=-1)
-    '''
-    for i in range(400):
-        for j in range(500):
-            if np.linalg.matrix_rank(J[i,j,...]) < 2:
-                J[i,j,0,0] = 1e5
-                J[i,j,0,1] = 0
-                J[i,j,1,0] = 0
-                J[i,j,1,1] = 1e5
-    '''            
+          
     Jinv = np.linalg.inv(J)
 
     dA1 = (Jinv[..., 0, 0]*(projections1 - e1) +
@@ -125,16 +121,29 @@ for iter in range(100):
     dA2 = (Jinv[..., 0, 1]*(projections1 - e1) +
            Jinv[..., 1, 1]*(projections2 - e2))
 
+    #Without adaptive step
     A1b -= step*dA1[..., None]
     A2b -= step*dA2[..., None]
-
+    
+    '''
+    #With adaptive step
+    while (A1b[...,0] - step1*dA1).min() < 0 or (A2b[...,0] - step2*dA2).min() < 0:
+        step1[A1b[...,0] - step1*dA1<0] /= 2
+        step2[A2b[...,0] - step2*dA2<0] /= 2
+        #step /= 2 
+    print("Step1_max: %f, step2_max: %f " % (step1.max(), step2.max()))    
+    print("Step1_min: %f, step2_min: %f " % (step1.min(), step2.min()))    
+    A1b -= step1[..., None]*dA1[..., None]
+    A2b -= step2[..., None]*dA2[..., None]
+    '''
+    
     norm = np.linalg.norm(projections1 - e1) + np.linalg.norm(projections2 - e2)
     if norm < 1e-2:
         break
     print("Iter: %i, norm: %f" % (iter, norm))
 
-raise Exception('stop')
-B = np.squeeze(A1b[...,0])
+#raise Exception('stop')
+B = np.squeeze(A2b[...,0])
 rhs = A.range.element(B)
 
 x = A.domain.zero()
